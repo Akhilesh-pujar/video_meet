@@ -1,35 +1,34 @@
-const { useState, useEffect } = require("react")
 import { useSocket } from "@/context/socket"
 import { useRouter } from "next/router"
 
+const { useState, useEffect, useRef } = require("react")
 
-const usePeer = ()=>{
+const usePeer = () => {
     const socket = useSocket()
     const roomId = useRouter().query.roomId;
-    const [peer,setpeer]= useState(null);
-    const [peerid,setpeerid] = useState('');
-    const isPeerSet = useRef(false);
+    const [peer, setPeer] = useState(null)
+    const [myId, setMyId] = useState('')
+    const isPeerSet = useRef(false)
 
-
-    useEffect(()=>{
+    useEffect(() => {
         if (isPeerSet.current || !roomId || !socket) return;
         isPeerSet.current = true;
         let myPeer;
-    (async function initpeer(){
-        const mypeer = new (await import ('peerjs')).default();
+        (async function initPeer() {
+            myPeer = new (await import('peerjs')).default()
+            setPeer(myPeer)
 
-        setpeer(mypeer) 
-        mypeer.on('open',(id)=>{
-            console.log(`your peerid is ${id}connected`)
-            setpeerid(id)
-        })
-    })() 
+            myPeer.on('open', (id) => {
+                console.log(`your peer id is ${id}`)
+                setMyId(id)
+                socket?.emit('join-room', roomId, id)
+            })
+        })()
+    }, [roomId, socket])
 
-    },[])
-
-    return{
+    return {
         peer,
-        peerid
+        myId
     }
 }
 
